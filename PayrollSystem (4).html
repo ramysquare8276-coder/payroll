@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>نظام الرواتب الشهري</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F4F6FB;
+    --surface: #FFFFFF;
+    --card: #FFFFFF;
+    --border: #E2E8F0;
+    --accent: #6C63FF;
+    --accent2: #00D4AA;
+    --accent3: #FF6B6B;
+    --accent4: #FFB347;
+    --text: #1E2333;
+    --muted: #94A3B8;
+    --success: #10B981;
+    --danger: #EF4444;
+    --warning: #F59E0B;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Cairo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    direction: rtl;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFF 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-logo { display: flex; align-items: center; gap: 12px; }
+  .header-icon {
+    width: 42px; height: 42px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), #9C8FFF);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+  .header-title { font-size: 18px; font-weight: 900; color: #1E2333; }
+  .header-sub { font-size: 12px; color: var(--muted); }
+  .month-selector {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .month-selector select {
+    background: var(--card); border: 1px solid var(--border);
+    color: var(--text); padding: 8px 14px; border-radius: 10px;
+    font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 700;
+    cursor: pointer; outline: none;
+  }
+  .btn-print {
+    background: linear-gradient(135deg, var(--accent), #9C8FFF);
+    color: #fff; border: none; padding: 9px 18px; border-radius: 10px;
+    font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: opacity .2s;
+  }
+  .btn-print:hover { opacity: .85; }
+
+  /* ── Layout ── */
+  .main { display: flex; height: calc(100vh - 73px); }
+  .sidebar {
+    width: 240px; min-width: 240px;
+    background: #FFFFFF;
+    border-left: 1px solid var(--border);
+    padding: 20px 12px;
+    overflow-y: auto;
+  }
+  .sidebar-title { font-size: 11px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; padding: 0 8px; }
+  .emp-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 10px; border-radius: 12px; cursor: pointer;
+    transition: background .15s; margin-bottom: 4px;
+  }
+  .emp-item:hover { background: #F4F6FB; }
+  .emp-item.active { background: rgba(108,99,255,.15); border: 1px solid rgba(108,99,255,.3); }
+  .emp-avatar {
+    width: 34px; height: 34px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 800; color: #fff; flex-shrink: 0;
+  }
+  .emp-name { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.3; }
+  .emp-dept { font-size: 11px; color: var(--muted); }
+  .emp-badge {
+    margin-right: auto; font-size: 10px; font-weight: 800;
+    padding: 2px 7px; border-radius: 20px;
+  }
+
+  /* ── Content ── */
+  .content { flex: 1; overflow-y: auto; padding: 28px 32px; }
+
+  /* ── Summary Cards ── */
+  .summary-grid {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 28px;
+  }
+  .summary-card {
+    border-radius: 16px; padding: 18px;
+    position: relative; overflow: hidden;
+    border: none;
+  }
+  .summary-card::before {
+    content: ''; position: absolute; top: 0; right: 0;
+    width: 80px; height: 80px; border-radius: 0 16px 0 80px;
+    background: rgba(255,255,255,0.15);
+  }
+  .summary-card.blue   { background: linear-gradient(135deg, #6C63FF, #9C8FFF); }
+  .summary-card.green  { background: linear-gradient(135deg, #10B981, #00D4AA); }
+  .summary-card.red    { background: linear-gradient(135deg, #EF4444, #FF6B6B); }
+  .summary-card.orange { background: linear-gradient(135deg, #F59E0B, #FFB347); }
+  .summary-card.purple { background: linear-gradient(135deg, #8B5CF6, #C084FC); }
+  .sc-icon { font-size: 22px; margin-bottom: 8px; }
+  .sc-val { font-size: 20px; font-weight: 900; color: #fff; margin-bottom: 2px; text-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+  .sc-label { font-size: 11px; color: rgba(255,255,255,0.85); font-weight: 700; }
+
+  /* ── Payroll Table ── */
+  .section-title {
+    font-size: 16px; font-weight: 900; color: #1E2333; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-title span { font-size: 18px; }
+  .table-wrap {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; overflow: hidden; margin-bottom: 28px;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead tr { background: #F8FAFF; border-bottom: 1px solid var(--border); }
+  th {
+    padding: 12px 16px; text-align: right; font-weight: 800;
+    color: var(--accent); white-space: nowrap; font-size: 12px;
+  }
+  td { padding: 13px 16px; border-bottom: 1px solid #F1F5F9; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #F8FAFF; }
+  .emp-cell { display: flex; align-items: center; gap: 10px; }
+  .td-green { color: var(--success); font-weight: 700; }
+  .td-red { color: var(--danger); font-weight: 700; }
+  .td-orange { color: var(--warning); font-weight: 700; }
+  .td-purple { color: #C084FC; font-weight: 700; }
+  .td-white { color: #fff; font-weight: 800; }
+  .net-badge {
+    background: rgba(16,185,129,.15); color: var(--success);
+    padding: 4px 12px; border-radius: 20px; font-weight: 800; font-size: 13px;
+    display: inline-block; white-space: nowrap;
+  }
+  .net-badge.low { background: rgba(239,68,68,.12); color: var(--danger); }
+
+  /* ── Edit Modal ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.7); backdrop-filter: blur(4px);
+    z-index: 999; align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: #FFFFFF; border: 1px solid var(--border);
+    border-radius: 24px; padding: 28px; width: 560px; max-width: 95vw;
+    max-height: 90vh; overflow-y: auto; animation: popIn .2s ease;
+  }
+  /* ── Employee Profile Page ── */
+  .profile-tabs {
+    display: flex; gap: 8px; margin-bottom: 24px;
+    border-bottom: 2px solid var(--border); padding-bottom: 0;
+  }
+  .profile-tab {
+    padding: 10px 20px; border-radius: 10px 10px 0 0; font-size: 13px;
+    font-weight: 800; cursor: pointer; border: none;
+    background: transparent; color: var(--muted); font-family: 'Cairo', sans-serif;
+    border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all .15s;
+  }
+  .profile-tab.active { color: var(--accent); border-bottom-color: var(--accent); background: rgba(108,99,255,.06); }
+  .profile-tab:hover:not(.active) { background: #F4F6FB; color: var(--text); }
+
+  .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .profile-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 20px;
+  }
+  .profile-card-title {
+    font-size: 11px; font-weight: 800; color: var(--accent);
+    letter-spacing: 1px; margin-bottom: 16px; text-transform: uppercase;
+  }
+  .profile-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid #F1F5F9; }
+  .profile-row:last-child { border-bottom: none; }
+  .profile-row-label { font-size: 12px; color: var(--muted); font-weight: 700; }
+  .profile-row-val { font-size: 13px; font-weight: 800; color: var(--text); }
+  .profile-row-val.accent { color: var(--accent); font-size: 15px; }
+  .profile-row-val.green { color: var(--success); font-size: 15px; }
+
+  .contract-highlight {
+    background: linear-gradient(135deg, rgba(108,99,255,.08), rgba(0,212,170,.08));
+    border: 1px solid rgba(108,99,255,.2);
+    border-radius: 16px; padding: 20px; margin-bottom: 16px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  }
+  .contract-highlight-label { font-size: 12px; color: var(--muted); font-weight: 700; }
+  .contract-highlight-val { font-size: 26px; font-weight: 900; color: var(--accent); }
+
+  .service-badge {
+    background: rgba(0,212,170,.12); color: var(--accent2);
+    padding: 6px 14px; border-radius: 20px; font-weight: 800; font-size: 13px;
+  }
+  .btn-profile-edit {
+    background: rgba(108,99,255,.15); border: 1px solid rgba(108,99,255,.3);
+    color: #9C8FFF; padding: 9px 18px; border-radius: 10px;
+    font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: background .15s;
+  }
+  .btn-profile-edit:hover { background: rgba(108,99,255,.3); }
+
+  /* ── Profile Edit Modal ── */
+  #profileModal .modal { width: 620px; }
+  .contract-type-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  .contract-type-btn {
+    padding: 7px 16px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--card); color: var(--muted); font-family: 'Cairo', sans-serif;
+    font-size: 12px; font-weight: 700; cursor: pointer; transition: all .15s;
+  }
+  .contract-type-btn.selected {
+    background: rgba(108,99,255,.15); border-color: var(--accent); color: var(--accent);
+  }
+
+  @keyframes popIn { from { transform: scale(.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
+  .modal-title { font-size: 17px; font-weight: 900; color: #1E2333; }
+  .modal-close { background: none; border: none; color: var(--muted); font-size: 22px; cursor: pointer; line-height: 1; }
+  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .field-group { display: flex; flex-direction: column; gap: 6px; }
+  .field-group.full { grid-column: 1 / -1; }
+  .field-label { font-size: 12px; font-weight: 700; color: var(--muted); }
+  .field-input {
+    background: #F8FAFF; border: 1px solid var(--border);
+    color: #1E2333; padding: 10px 14px; border-radius: 10px;
+    font-family: 'Cairo', sans-serif; font-size: 13px; outline: none;
+    transition: border .15s;
+  }
+  .field-input:focus { border-color: var(--accent); }
+  .section-sep { grid-column: 1/-1; border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+  .section-label {
+    grid-column: 1/-1; font-size: 11px; font-weight: 800;
+    color: var(--accent); letter-spacing: 1px; margin-top: 4px;
+  }
+  .modal-footer { display: flex; gap: 10px; margin-top: 22px; justify-content: flex-end; }
+  .btn-save {
+    background: linear-gradient(135deg, var(--accent), #9C8FFF);
+    color: #fff; border: none; padding: 10px 24px; border-radius: 12px;
+    font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 800;
+    cursor: pointer;
+  }
+  .btn-cancel {
+    background: var(--card); border: 1px solid var(--border);
+    color: var(--muted); padding: 10px 20px; border-radius: 12px;
+    font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 700;
+    cursor: pointer;
+  }
+  .btn-edit {
+    background: rgba(108,99,255,.15); border: 1px solid rgba(108,99,255,.3);
+    color: #9C8FFF; padding: 5px 12px; border-radius: 8px;
+    font-family: 'Cairo', sans-serif; font-size: 12px; font-weight: 700;
+    cursor: pointer; transition: background .15s;
+  }
+  .btn-edit:hover { background: rgba(108,99,255,.3); }
+
+  /* ── Totals Footer ── */
+  .totals-row td { background: #EEF0FF; font-weight: 800; color: #1E2333; border-top: 2px solid var(--accent); }
+
+  /* ── Empty / All view ── */
+  .all-notice {
+    text-align: center; padding: 60px 20px; color: var(--muted); font-size: 14px;
+  }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: #1E2030; border: 1px solid var(--success);
+    color: var(--success); padding: 12px 24px; border-radius: 14px;
+    font-size: 13px; font-weight: 700; z-index: 9999;
+    transition: transform .3s ease; pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  @media print {
+    .header, .sidebar, .btn-print, .btn-edit, .month-selector select, #lockScreen { display: none !important; }
+    .main { height: auto; }
+    .content { padding: 0; }
+    body { background: #fff !important; color: #1E2333 !important; }
+    .table-wrap { border: 1px solid #CBD5E1; box-shadow: none; }
+    .summary-card { background: #F8FAFF !important; border: 1px solid #CBD5E1 !important; }
+    table { font-size: 11px; }
+    th { color: var(--accent) !important; background: #F0F0FF !important; }
+    td { color: #1E2333 !important; border-color: #E2E8F0 !important; }
+    .td-green { color: #059669 !important; }
+    .td-red { color: #DC2626 !important; }
+    .td-orange { color: #D97706 !important; }
+    .td-purple { color: #7C3AED !important; }
+    .net-badge { background: #ECFDF5 !important; color: #059669 !important; border: 1px solid #A7F3D0; }
+    .totals-row td { background: #EEF0FF !important; color: #1E2333 !important; }
+    .sc-val { color: #1E2333 !important; }
+  }
+  /* ── Lock Screen ── */
+  #lockScreen {
+    position: fixed; inset: 0; z-index: 9999;
+    background: #F4F6FB;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .lock-box {
+    background: #FFFFFF; border: 1px solid var(--border);
+    border-radius: 28px; padding: 44px 48px; width: 380px;
+    text-align: center; animation: popIn .3s ease;
+    box-shadow: 0 20px 60px rgba(108,99,255,.1);
+  }
+  .lock-icon {
+    width: 70px; height: 70px; border-radius: 20px; margin: 0 auto 20px;
+    background: linear-gradient(135deg, var(--accent), #9C8FFF);
+    display: flex; align-items: center; justify-content: center; font-size: 32px;
+  }
+  .lock-title { font-size: 22px; font-weight: 900; color: #1E2333; margin-bottom: 6px; }
+  .lock-sub { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+  .lock-input {
+    width: 100%; background: #F8FAFF; border: 2px solid var(--border);
+    color: #1E2333; padding: 14px 18px; border-radius: 14px; font-size: 22px;
+    font-family: 'Cairo', sans-serif; font-weight: 800; text-align: center;
+    letter-spacing: 8px; outline: none; transition: border .2s; margin-bottom: 16px;
+    -webkit-text-security: disc;
+  }
+  .lock-input:focus { border-color: var(--accent); }
+  .lock-input.error { border-color: var(--danger); animation: shake .35s ease; }
+  @keyframes shake {
+    0%,100%{transform:translateX(0)} 20%{transform:translateX(-10px)} 60%{transform:translateX(10px)}
+  }
+  .lock-btn {
+    width: 100%; background: linear-gradient(135deg, var(--accent), #9C8FFF);
+    color: #fff; border: none; padding: 14px; border-radius: 14px;
+    font-family: 'Cairo', sans-serif; font-size: 15px; font-weight: 800;
+    cursor: pointer; transition: opacity .2s;
+  }
+  .lock-btn:hover { opacity: .88; }
+  .lock-err { font-size: 12px; color: var(--danger); font-weight: 700; margin-top: 12px; min-height: 18px; }
+</style>
+</head>
+<body>
+
+<!-- Lock Screen -->
+<div id="lockScreen">
+  <div class="lock-box">
+    <div class="lock-icon">🔐</div>
+    <div class="lock-title">نظام الرواتب</div>
+    <div class="lock-sub">أدخل كلمة المرور للمتابعة</div>
+    <input class="lock-input" type="password" id="lockInput" maxlength="10" placeholder="••••••" onkeydown="if(event.key==='Enter')checkPassword()">
+    <button class="lock-btn" onclick="checkPassword()">🔓 دخول</button>
+    <div class="lock-err" id="lockErr"></div>
+  </div>
+</div>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-logo">
+    <div class="header-icon">💼</div>
+    <div>
+      <div class="header-title">نظام الرواتب الشهري</div>
+      <div class="header-sub">إدارة الرواتب والمكافآت والخصومات</div>
+    </div>
+  </div>
+  <div class="month-selector">
+    <select id="monthSel" onchange="renderAll()"></select>
+    <select id="yearSel" onchange="renderAll()"></select>
+    <button class="btn-print" onclick="window.print()">🖨️ طباعة</button>
+  </div>
+</div>
+
+<div class="main">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-title">الموظفون</div>
+    <div id="empList"></div>
+  </div>
+
+  <!-- Content -->
+  <div class="content" id="mainContent"></div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">تعديل بيانات الراتب</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="field-grid" id="modalFields"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">إلغاء</button>
+      <button class="btn-save" onclick="saveModal()">💾 حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Profile Edit Modal -->
+<div class="modal-overlay" id="profileModal">
+  <div class="modal" style="width:620px">
+    <div class="modal-header">
+      <div class="modal-title" id="profileModalTitle">👤 بيانات الموظف</div>
+      <button class="modal-close" onclick="closeProfileModal()">✕</button>
+    </div>
+    <div class="field-grid" id="profileModalFields"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeProfileModal()">إلغاء</button>
+      <button class="btn-save" onclick="saveProfileModal()">💾 حفظ البيانات</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Add Employee Modal -->
+<div class="modal-overlay" id="addEmpModal">
+  <div class="modal" style="width:640px">
+    <div class="modal-header">
+      <div class="modal-title">➕ إضافة موظف جديد</div>
+      <button class="modal-close" onclick="closeAddEmployeeModal()">✕</button>
+    </div>
+    <div class="field-grid">
+      <div class="section-label">👤 البيانات الأساسية</div>
+      <div class="field-group">
+        <div class="field-label">الاسم الكامل *</div>
+        <input class="field-input" id="ae_name" placeholder="مثال: محمد عبد الله">
+      </div>
+      <div class="field-group">
+        <div class="field-label">القسم *</div>
+        <input class="field-input" id="ae_dept" placeholder="مثال: المبيعات">
+      </div>
+      <div class="field-group">
+        <div class="field-label">المسمى الوظيفي</div>
+        <input class="field-input" id="ae_jobTitle" placeholder="مثال: مدير المبيعات">
+      </div>
+      <div class="field-group">
+        <div class="field-label">الدور</div>
+        <select class="field-input" id="ae_role">
+          <option value="employee">موظف</option>
+          <option value="manager">مدير</option>
+          <option value="gm">مدير عام</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <div class="field-label">رقم الجوال</div>
+        <input class="field-input" id="ae_phone" placeholder="05xxxxxxxx">
+      </div>
+      <div class="field-group">
+        <div class="field-label">الراتب التعاقدي (ر.س)</div>
+        <input class="field-input" id="ae_contractSalary" type="number" placeholder="0" min="0">
+      </div>
+      <hr class="section-sep">
+      <div class="section-label">🏦 بيانات الحساب البنكي</div>
+      <div class="field-group">
+        <div class="field-label">رقم الحساب (IBAN)</div>
+        <input class="field-input" id="ae_bankAccount" placeholder="SA00 0000 0000 0000 0000 0000" style="direction:ltr">
+      </div>
+      <div class="field-group">
+        <div class="field-label">اسم البنك</div>
+        <input class="field-input" id="ae_bankName" placeholder="مثال: البنك الأهلي السعودي">
+      </div>
+      <hr class="section-sep">
+      <div class="section-label">💰 الراتب الشهري الافتراضي</div>
+      <div class="field-group">
+        <div class="field-label">الراتب الأساسي (ر.س)</div>
+        <input class="field-input" id="ae_base" type="number" placeholder="0" min="0">
+      </div>
+      <div class="field-group">
+        <div class="field-label">بدل السكن (ر.س)</div>
+        <input class="field-input" id="ae_housing" type="number" placeholder="0" min="0">
+      </div>
+      <div class="field-group">
+        <div class="field-label">بدل المواصلات (ر.س)</div>
+        <input class="field-input" id="ae_transport" type="number" placeholder="0" min="0">
+      </div>
+      <div class="field-group">
+        <div class="field-label">البدل الطبي (ر.س)</div>
+        <input class="field-input" id="ae_medical" type="number" placeholder="0" min="0">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeAddEmployeeModal()">إلغاء</button>
+      <button class="btn-save" onclick="saveAddEmployee()">💾 إضافة الموظف</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────────────
+const DEFAULT_EMPLOYEES = [
+  { id:"emp1",    name:"حسام أحمد الشافعي",  dept:"العمليات",         color:"#3B82F6",  role:"employee" },
+  { id:"emp2",    name:"أحمد نصر هلال",       dept:"المبيعات",         color:"#06B6D4",  role:"employee" },
+  { id:"emp3",    name:"السيد يحيى",           dept:"التسويق",          color:"#8B5CF6",  role:"employee" },
+  { id:"emp4",    name:"محمود عبد الباسط",    dept:"المشتريات",        color:"#EC4899",  role:"employee" },
+  { id:"emp5",    name:"ياسر رضا",             dept:"تقنية المعلومات", color:"#F59E0B",  role:"employee" },
+  { id:"emp6",    name:"محمد رمضان",           dept:"الإدارة",          color:"#10B981",  role:"employee" },
+  { id:"manager", name:"عبد الغفار بديع",     dept:"الإدارة",          color:"#10B981",  role:"manager"  },
+];
+function loadEmployees() {
+  const saved = localStorage.getItem("employees_list");
+  return saved ? JSON.parse(saved) : DEFAULT_EMPLOYEES;
+}
+function saveEmployees() {
+  localStorage.setItem("employees_list", JSON.stringify(EMPLOYEES));
+}
+let EMPLOYEES = loadEmployees();
+
+// ── Employee Profile Data ──────────────────────────────────────────────
+function getEmpProfile(empId) {
+  const saved = localStorage.getItem("profile_" + empId);
+  const defaults = {
+    emp1:    { phone:"0512345678", nationalId:"1023456789", jobTitle:"مدير العمليات",      startDate:"2021-03-01", contractSalary:10800, contractType:"دوام كامل",  notes:"" },
+    emp2:    { phone:"0523456789", nationalId:"1034567890", jobTitle:"مندوب مبيعات",       startDate:"2022-06-15", contractSalary:10100, contractType:"دوام كامل",  notes:"" },
+    emp3:    { phone:"0534567890", nationalId:"1045678901", jobTitle:"أخصائي تسويق",       startDate:"2023-01-10", contractSalary:9300,  contractType:"دوام كامل",  notes:"" },
+    emp4:    { phone:"0545678901", nationalId:"1056789012", jobTitle:"مسؤول مشتريات",      startDate:"2020-09-01", contractSalary:8700,  contractType:"دوام كامل",  notes:"" },
+    emp5:    { phone:"0556789012", nationalId:"1067890123", jobTitle:"مطور أنظمة",         startDate:"2019-05-20", contractSalary:12200, contractType:"دوام كامل",  notes:"" },
+    emp6:    { phone:"0567890123", nationalId:"1078901234", jobTitle:"موظف إداري",         startDate:"2022-11-01", contractSalary:8200,  contractType:"دوام كامل",  notes:"" },
+    manager: { phone:"0578901234", nationalId:"1089012345", jobTitle:"مدير الإدارة",       startDate:"2018-01-01", contractSalary:18800, contractType:"دوام كامل",  notes:"" },
+    gm:      { phone:"0589012345", nationalId:"1090123456", jobTitle:"المدير العام",        startDate:"2015-06-01", contractSalary:33500, contractType:"دوام كامل",  notes:"" },
+    hr:      { phone:"0590123456", nationalId:"1001234567", jobTitle:"أخصائي موارد بشرية", startDate:"2020-03-15", contractSalary:11300, contractType:"دوام كامل",  notes:"" },
+  };
+  if (saved) return { ...(defaults[empId]||{}), ...JSON.parse(saved) };
+  return defaults[empId] || { phone:"", nationalId:"", jobTitle:"", startDate:"", contractSalary:0, contractType:"دوام كامل", notes:"" };
+}
+
+function saveEmpProfile(empId, data) {
+  localStorage.setItem("profile_" + empId, JSON.stringify(data));
+}
+
+function calcServiceYears(startDate) {
+  if (!startDate) return "—";
+  const start = new Date(startDate);
+  const now = new Date();
+  const diffMs = now - start;
+  const years = Math.floor(diffMs / (1000 * 60 * 60 * 24 * 365.25));
+  const months = Math.floor((diffMs % (1000 * 60 * 60 * 24 * 365.25)) / (1000 * 60 * 60 * 24 * 30.44));
+  if (years < 1) return `${months} شهر`;
+  return `${years} سنة ${months > 0 ? 'و' + months + ' شهر' : ''}`;
+}
+
+const MONTHS_AR = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
+
+// Default salary template per employee
+const DEFAULT_SALARY = {
+  emp1:    { base:8000,  housing:2000, transport:500,  medical:300 },
+  emp2:    { base:7500,  housing:1800, transport:500,  medical:300 },
+  emp3:    { base:7000,  housing:1800, transport:500,  medical:300 },
+  emp4:    { base:6500,  housing:1500, transport:400,  medical:300 },
+  emp5:    { base:9000,  housing:2200, transport:600,  medical:400 },
+  emp6:    { base:6000,  housing:1500, transport:400,  medical:300 },
+  manager: { base:14000, housing:3500, transport:800,  medical:600 },
+  gm:      { base:25000, housing:6000, transport:1500, medical:1000 },
+  hr:      { base:8500,  housing:2000, transport:500,  medical:300 },
+};
+
+// Storage key
+function storageKey(empId, month, year) { return `pay_${empId}_${month}_${year}`; }
+
+function getPayData(empId, month, year) {
+  const key = storageKey(empId, month, year);
+  const saved = localStorage.getItem(key);
+  if (saved) return JSON.parse(saved);
+  const def = DEFAULT_SALARY[empId] || { base:5000, housing:1000, transport:400, medical:200 };
+  return {
+    base: def.base, housing: def.housing, transport: def.transport, medical: def.medical,
+    overtime: 0, bonus: 0, reward: 0,
+    deduct_absence: 0, deduct_advance: 0, deduct_other: 0,
+    notes: ""
+  };
+}
+
+function savePayData(empId, month, year, data) {
+  localStorage.setItem(storageKey(empId, month, year), JSON.stringify(data));
+}
+
+function calcNet(d) {
+  const gross = (+d.base||0) + (+d.housing||0) + (+d.transport||0) + (+d.medical||0)
+              + (+d.overtime||0) + (+d.bonus||0) + (+d.reward||0);
+  const deductions = (+d.deduct_absence||0) + (+d.deduct_advance||0) + (+d.deduct_other||0);
+  return { gross, deductions, net: gross - deductions };
+}
+
+// ── State ──────────────────────────────────────────────────────────────
+let activeEmpId = "all";
+let editingEmpId = null;
+
+// ── Init selects ───────────────────────────────────────────────────────
+const now = new Date();
+const monthSel = document.getElementById("monthSel");
+const yearSel  = document.getElementById("yearSel");
+MONTHS_AR.forEach((m, i) => {
+  const o = document.createElement("option");
+  o.value = i; o.textContent = m;
+  if (i === now.getMonth()) o.selected = true;
+  monthSel.appendChild(o);
+});
+[2024, 2025, 2026].forEach(y => {
+  const o = document.createElement("option");
+  o.value = y; o.textContent = y;
+  if (y === now.getFullYear()) o.selected = true;
+  yearSel.appendChild(o);
+});
+
+function getMonthYear() {
+  return { month: +monthSel.value, year: +yearSel.value };
+}
+
+// ── Sidebar ────────────────────────────────────────────────────────────
+function renderSidebar() {
+  const list = document.getElementById("empList");
+  list.innerHTML = "";
+  // "All" option
+  const allDiv = document.createElement("div");
+  allDiv.className = "emp-item" + (activeEmpId === "all" ? " active" : "");
+  allDiv.innerHTML = `<div class="emp-avatar" style="background:#6C63FF">كل</div>
+    <div><div class="emp-name">كل الموظفين</div><div class="emp-dept">عرض جدول كامل</div></div>`;
+  allDiv.onclick = () => { activeEmpId = "all"; renderAll(); };
+  list.appendChild(allDiv);
+
+  // Add employee button
+  const addBtn = document.createElement("div");
+  addBtn.className = "emp-item";
+  addBtn.style.cssText = "background:rgba(108,99,255,.08);border:1px dashed rgba(108,99,255,.4);margin-top:8px;justify-content:center;";
+  addBtn.innerHTML = `<span style="color:var(--accent);font-weight:800;font-size:13px">＋ إضافة موظف</span>`;
+  addBtn.onclick = () => openAddEmployeeModal();
+  list.appendChild(addBtn);
+
+  EMPLOYEES.forEach(emp => {
+    const { month, year } = getMonthYear();
+    const d = getPayData(emp.id, month, year);
+    const { net } = calcNet(d);
+    const div = document.createElement("div");
+    div.className = "emp-item" + (activeEmpId === emp.id ? " active" : "");
+    const roleLabel = emp.role === "gm" ? "👑" : emp.role === "manager" ? "👔" : "👤";
+    div.innerHTML = `
+      <div class="emp-avatar" style="background:${emp.color}">${emp.name.slice(0,1)}${emp.name.split(" ")[1]?.slice(0,1)||""}</div>
+      <div style="flex:1;min-width:0">
+        <div class="emp-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${roleLabel} ${emp.name.split(" ").slice(0,2).join(" ")}</div>
+        <div class="emp-dept">${emp.dept}</div>
+      </div>`;
+    div.onclick = () => { activeEmpId = emp.id; renderAll(); };
+    list.appendChild(div);
+  });
+}
+
+// ── Format number ──────────────────────────────────────────────────────
+function fmt(n) { return Number(n).toLocaleString("ar-EG") + " ر.س"; }
+
+// ── Main render ────────────────────────────────────────────────────────
+function renderAll() {
+  renderSidebar();
+  const { month, year } = getMonthYear();
+  const content = document.getElementById("mainContent");
+
+  if (activeEmpId === "all") {
+    renderAllTable(content, month, year);
+  } else {
+    renderEmpDetail(content, activeEmpId, month, year);
+  }
+}
+
+function renderAllTable(content, month, year) {
+  // Compute totals
+  let totGross = 0, totDed = 0, totNet = 0;
+  const rows = EMPLOYEES.map(emp => {
+    const d = getPayData(emp.id, month, year);
+    const { gross, deductions, net } = calcNet(d);
+    totGross += gross; totDed += deductions; totNet += net;
+    return { emp, d, gross, deductions, net };
+  });
+
+  // Summary cards
+  const summaryCards = `
+    <div class="summary-grid">
+      <div class="summary-card blue"><div class="sc-icon">👥</div><div class="sc-val">${EMPLOYEES.length}</div><div class="sc-label">عدد الموظفين</div></div>
+      <div class="summary-card green"><div class="sc-icon">💰</div><div class="sc-val">${fmt(totGross)}</div><div class="sc-label">إجمالي المستحقات</div></div>
+      <div class="summary-card red"><div class="sc-icon">➖</div><div class="sc-val">${fmt(totDed)}</div><div class="sc-label">إجمالي الخصومات</div></div>
+      <div class="summary-card orange"><div class="sc-icon">🎯</div><div class="sc-val">${fmt(rows.reduce((s,r)=>(+r.d.overtime||0)+s,0))}</div><div class="sc-label">إجمالي الأوفرتايم</div></div>
+      <div class="summary-card purple"><div class="sc-icon">🏆</div><div class="sc-val">${fmt(totNet)}</div><div class="sc-label">صافي الرواتب</div></div>
+    </div>`;
+
+  const tableRows = rows.map(({ emp, d, gross, deductions, net }) => {
+    const initials = emp.name.slice(0,1) + (emp.name.split(" ")[1]?.slice(0,1)||"");
+    const roleLabel = emp.role === "gm" ? "👑" : emp.role === "manager" ? "👔" : "👤";
+    return `<tr>
+      <td>
+        <div class="emp-cell">
+          <div class="emp-avatar" style="background:${emp.color};width:30px;height:30px;border-radius:8px;font-size:11px">${initials}</div>
+          <div>
+            <div style="font-weight:700;color:#1E2333;font-size:13px">${roleLabel} ${emp.name}</div>
+            <div style="font-size:11px;color:var(--muted)">${emp.dept}</div>
+          </div>
+        </div>
+      </td>
+      <td class="td-green">${fmt(d.base)}</td>
+      <td class="td-green">${fmt((+d.housing||0)+(+d.transport||0)+(+d.medical||0))}</td>
+      <td class="td-orange">${d.overtime > 0 ? fmt(d.overtime) : '—'}</td>
+      <td class="td-purple">${(+d.bonus||0)+(+d.reward||0) > 0 ? fmt((+d.bonus||0)+(+d.reward||0)) : '—'}</td>
+      <td class="td-red">${deductions > 0 ? fmt(deductions) : '—'}</td>
+      <td><span class="net-badge ${net < 5000 ? 'low':''}">${fmt(net)}</span></td>
+      <td><button class="btn-edit" onclick="openModal('${emp.id}')">✏️ تعديل</button></td>
+    </tr>`;
+  }).join("");
+
+  content.innerHTML = `
+    ${summaryCards}
+    <div class="section-title"><span>📋</span> كشف رواتب ${MONTHS_AR[month]} ${year}</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>الموظف</th>
+          <th>الراتب الأساسي</th>
+          <th>البدلات</th>
+          <th>أوفرتايم</th>
+          <th>بونص / مكافآت</th>
+          <th>خصومات</th>
+          <th>الصافي</th>
+          <th></th>
+        </tr></thead>
+        <tbody>
+          ${tableRows}
+          <tr class="totals-row">
+            <td>الإجمالي</td>
+            <td class="td-green">${fmt(rows.reduce((s,r)=>(+r.d.base||0)+s,0))}</td>
+            <td class="td-green">${fmt(rows.reduce((s,r)=>(+r.d.housing||0)+(+r.d.transport||0)+(+r.d.medical||0)+s,0))}</td>
+            <td class="td-orange">${fmt(rows.reduce((s,r)=>(+r.d.overtime||0)+s,0))}</td>
+            <td class="td-purple">${fmt(rows.reduce((s,r)=>(+r.d.bonus||0)+(+r.d.reward||0)+s,0))}</td>
+            <td class="td-red">${fmt(totDed)}</td>
+            <td><span class="net-badge">${fmt(totNet)}</span></td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function renderEmpDetail(content, empId, month, year, tab) {
+  tab = tab || "salary";
+  const emp = EMPLOYEES.find(e => e.id === empId);
+  const d = getPayData(empId, month, year);
+  const p = getEmpProfile(empId);
+  const { gross, deductions, net } = calcNet(d);
+  const initials = emp.name.slice(0,1) + (emp.name.split(" ")[1]?.slice(0,1)||"");
+
+  const summaryCards = `
+    <div class="summary-grid">
+      <div class="summary-card green"><div class="sc-icon">💵</div><div class="sc-val">${fmt(d.base)}</div><div class="sc-label">الراتب الأساسي</div></div>
+      <div class="summary-card blue"><div class="sc-icon">🏠</div><div class="sc-val">${fmt((+d.housing||0)+(+d.transport||0)+(+d.medical||0))}</div><div class="sc-label">إجمالي البدلات</div></div>
+      <div class="summary-card orange"><div class="sc-icon">⏰</div><div class="sc-val">${fmt(d.overtime)}</div><div class="sc-label">أوفرتايم</div></div>
+      <div class="summary-card red"><div class="sc-icon">➖</div><div class="sc-val">${fmt(deductions)}</div><div class="sc-label">الخصومات</div></div>
+      <div class="summary-card purple"><div class="sc-icon">✅</div><div class="sc-val">${fmt(net)}</div><div class="sc-label">صافي الراتب</div></div>
+    </div>`;
+
+  const tabsHtml = `
+    <div class="profile-tabs">
+      <button class="profile-tab${tab==='salary'?' active':''}" onclick="renderEmpDetail(document.getElementById('mainContent'),'${empId}',${month},${year},'salary')">💰 بيانات الراتب</button>
+      <button class="profile-tab${tab==='profile'?' active':''}" onclick="renderEmpDetail(document.getElementById('mainContent'),'${empId}',${month},${year},'profile')">👤 بيانات الموظف</button>
+    </div>`;
+
+  const empHeader = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div class="emp-avatar" style="background:${emp.color};width:52px;height:52px;border-radius:16px;font-size:18px">${initials}</div>
+        <div>
+          <div style="font-size:20px;font-weight:900;color:#1E2333">${emp.name}</div>
+          <div style="font-size:13px;color:var(--muted)">${p.jobTitle ? p.jobTitle + ' · ' : ''}${emp.dept} · ${MONTHS_AR[month]} ${year}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        ${tab==='salary'
+          ? `<button class="btn-edit" style="padding:10px 20px;font-size:13px" onclick="openModal('${empId}')">✏️ تعديل الراتب</button>`
+          : `<button class="btn-profile-edit" onclick="openProfileModal('${empId}')">✏️ تعديل البيانات</button>`
+        }
+        <button onclick="confirmDeleteEmployee('${empId}')" style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#EF4444;padding:10px 16px;border-radius:10px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;cursor:pointer">🗑️ حذف</button>
+      </div>
+    </div>`;
+
+  if (tab === 'salary') {
+    content.innerHTML = `
+      ${summaryCards}
+      ${empHeader}
+      ${tabsHtml}
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>البند</th><th>المبلغ</th><th>النوع</th></tr></thead>
+          <tbody>
+            <tr><td style="color:var(--muted);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px" colspan="3">المستحقات</td></tr>
+            <tr><td>الراتب الأساسي</td><td class="td-green">${fmt(d.base)}</td><td><span style="background:rgba(16,185,129,.1);color:var(--success);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">أساسي</span></td></tr>
+            <tr><td>بدل السكن</td><td class="td-green">${fmt(d.housing)}</td><td><span style="background:rgba(59,130,246,.1);color:#60A5FA;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">بدل</span></td></tr>
+            <tr><td>بدل المواصلات</td><td class="td-green">${fmt(d.transport)}</td><td><span style="background:rgba(59,130,246,.1);color:#60A5FA;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">بدل</span></td></tr>
+            <tr><td>بدل طبي</td><td class="td-green">${fmt(d.medical)}</td><td><span style="background:rgba(59,130,246,.1);color:#60A5FA;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">بدل</span></td></tr>
+            ${d.overtime > 0 ? `<tr><td>أوفرتايم</td><td class="td-orange">${fmt(d.overtime)}</td><td><span style="background:rgba(245,158,11,.1);color:var(--warning);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">إضافي</span></td></tr>` : ""}
+            ${d.bonus > 0 ? `<tr><td>بونص</td><td class="td-purple">${fmt(d.bonus)}</td><td><span style="background:rgba(192,132,252,.1);color:#C084FC;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">بونص</span></td></tr>` : ""}
+            ${d.reward > 0 ? `<tr><td>مكافأة</td><td class="td-purple">${fmt(d.reward)}</td><td><span style="background:rgba(192,132,252,.1);color:#C084FC;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">مكافأة</span></td></tr>` : ""}
+            <tr style="border-top:1px solid var(--border)"><td style="font-weight:800">إجمالي المستحقات</td><td class="td-green" style="font-size:15px;font-weight:900">${fmt(gross)}</td><td></td></tr>
+            ${deductions > 0 ? `
+            <tr><td style="color:var(--muted);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px" colspan="3">الخصومات</td></tr>
+            ${d.deduct_absence > 0 ? `<tr><td>خصم غياب</td><td class="td-red">(${fmt(d.deduct_absence)})</td><td><span style="background:rgba(239,68,68,.1);color:var(--danger);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">خصم</span></td></tr>` : ""}
+            ${d.deduct_advance > 0 ? `<tr><td>خصم سلفة</td><td class="td-red">(${fmt(d.deduct_advance)})</td><td><span style="background:rgba(239,68,68,.1);color:var(--danger);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">خصم</span></td></tr>` : ""}
+            ${d.deduct_other > 0 ? `<tr><td>خصومات أخرى</td><td class="td-red">(${fmt(d.deduct_other)})</td><td><span style="background:rgba(239,68,68,.1);color:var(--danger);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">خصم</span></td></tr>` : ""}
+            <tr style="border-top:1px solid var(--border)"><td style="font-weight:800">إجمالي الخصومات</td><td class="td-red" style="font-size:15px;font-weight:900">(${fmt(deductions)})</td><td></td></tr>
+            ` : ""}
+            <tr style="border-top:2px solid var(--accent)">
+              <td style="font-size:16px;font-weight:900;color:#fff">صافي الراتب</td>
+              <td colspan="2"><span class="net-badge" style="font-size:16px;padding:6px 18px">${fmt(net)}</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      ${d.notes ? `<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 18px;font-size:13px;color:var(--muted)">📝 ${d.notes}</div>` : ""}`;
+  } else {
+    // Profile tab
+    const diff = p.contractSalary - net;
+    const diffLabel = diff > 0 ? `زيادة تعاقدية ${fmt(diff)}+` : diff < 0 ? `فرق ${fmt(Math.abs(diff))}-` : "مطابق";
+    const diffColor = diff > 0 ? 'var(--warning)' : diff < 0 ? 'var(--danger)' : 'var(--success)';
+
+    content.innerHTML = `
+      ${empHeader}
+      ${tabsHtml}
+
+      ${p.contractSalary > 0 ? `
+      <div class="contract-highlight">
+        <div>
+          <div class="contract-highlight-label">💼 الراتب التعاقدي الإجمالي</div>
+          <div class="contract-highlight-val">${fmt(p.contractSalary)}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">نوع العقد: <strong style="color:var(--text)">${p.contractType||'—'}</strong></div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:6px">الصافي الفعلي هذا الشهر</div>
+          <div style="font-size:20px;font-weight:900;color:var(--success)">${fmt(net)}</div>
+          <div style="font-size:11px;font-weight:700;color:${diffColor};margin-top:4px">${diffLabel}</div>
+        </div>
+      </div>` : ''}
+
+      <div class="profile-grid">
+        <div class="profile-card">
+          <div class="profile-card-title">📋 البيانات الوظيفية</div>
+          <div class="profile-row">
+            <span class="profile-row-label">المسمى الوظيفي</span>
+            <span class="profile-row-val">${p.jobTitle||'—'}</span>
+          </div>
+          <div class="profile-row">
+            <span class="profile-row-label">القسم</span>
+            <span class="profile-row-val">${emp.dept}</span>
+          </div>
+          <div class="profile-row">
+            <span class="profile-row-label">تاريخ بداية العمل</span>
+            <span class="profile-row-val">${p.startDate ? new Date(p.startDate).toLocaleDateString('ar-SA', {year:'numeric',month:'long',day:'numeric'}) : '—'}</span>
+          </div>
+          <div class="profile-row">
+            <span class="profile-row-label">مدة الخدمة</span>
+            <span class="profile-row-val"><span class="service-badge">${calcServiceYears(p.startDate)}</span></span>
+          </div>
+          <div class="profile-row">
+            <span class="profile-row-label">نوع العقد</span>
+            <span class="profile-row-val">${p.contractType||'—'}</span>
+          </div>
+        </div>
+
+        <div class="profile-card">
+          <div class="profile-card-title">👤 البيانات الشخصية</div>
+          <div class="profile-row">
+            <span class="profile-row-label">الاسم الكامل</span>
+            <span class="profile-row-val">${emp.name}</span>
+          </div>
+          <div class="profile-row">
+            <span class="profile-row-label">رقم الجوال</span>
+            <span class="profile-row-val">${p.phone||'—'}</span>
+          </div>
+          <div class="profile-row">
+            <span class="profile-row-label">رقم الهوية / الإقامة</span>
+            <span class="profile-row-val">${p.nationalId||'—'}</span>
+          </div>
+          <div class="profile-row">
+            <span class="profile-row-label">🏦 رقم الحساب (IBAN)</span>
+            <span class="profile-row-val" style="font-size:12px;direction:ltr;text-align:right">${p.bankAccount||'—'}</span>
+          </div>
+          <div class="profile-row">
+            <span class="profile-row-label">اسم البنك</span>
+            <span class="profile-row-val">${p.bankName||'—'}</span>
+          </div>
+          ${p.notes ? `<div class="profile-row"><span class="profile-row-label">ملاحظات</span><span class="profile-row-val" style="font-size:12px;text-align:left;max-width:200px">${p.notes}</span></div>` : ''}
+        </div>
+
+        <div class="profile-card" style="grid-column:1/-1">
+          <div class="profile-card-title">💰 ملخص الراتب التعاقدي</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+            <div style="text-align:center;padding:12px;background:#F8FAFF;border-radius:12px">
+              <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:6px">الراتب الأساسي</div>
+              <div style="font-size:16px;font-weight:900;color:var(--success)">${fmt(d.base)}</div>
+            </div>
+            <div style="text-align:center;padding:12px;background:#F8FAFF;border-radius:12px">
+              <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:6px">بدل السكن</div>
+              <div style="font-size:16px;font-weight:900;color:#60A5FA">${fmt(d.housing)}</div>
+            </div>
+            <div style="text-align:center;padding:12px;background:#F8FAFF;border-radius:12px">
+              <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:6px">بدل المواصلات</div>
+              <div style="font-size:16px;font-weight:900;color:#60A5FA">${fmt(d.transport)}</div>
+            </div>
+            <div style="text-align:center;padding:12px;background:#F8FAFF;border-radius:12px">
+              <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:6px">البدل الطبي</div>
+              <div style="font-size:16px;font-weight:900;color:#60A5FA">${fmt(d.medical)}</div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+}
+
+// ── Profile Modal ──────────────────────────────────────────────────────
+let editingProfileEmpId = null;
+
+function openProfileModal(empId) {
+  editingProfileEmpId = empId;
+  const emp = EMPLOYEES.find(e => e.id === empId);
+  const p = getEmpProfile(empId);
+  document.getElementById("profileModalTitle").textContent = `👤 بيانات الموظف — ${emp.name}`;
+
+  const contractTypes = ["دوام كامل","دوام جزئي","مؤقت","مقاول","تدريب"];
+  const ctBtns = contractTypes.map(t =>
+    `<button class="contract-type-btn${p.contractType===t?' selected':''}" onclick="selectContractType(this,'${t}')">${t}</button>`
+  ).join("");
+
+  document.getElementById("profileModalFields").innerHTML = `
+    <div class="section-label">👤 البيانات الشخصية</div>
+    <div class="field-group">
+      <div class="field-label">الاسم الوظيفي / المسمى</div>
+      <input class="field-input" id="pf_jobTitle" value="${p.jobTitle||''}" placeholder="مثال: مدير العمليات">
+    </div>
+    <div class="field-group">
+      <div class="field-label">رقم الجوال</div>
+      <input class="field-input" id="pf_phone" value="${p.phone||''}" placeholder="05xxxxxxxx">
+    </div>
+    <div class="field-group">
+      <div class="field-label">رقم الهوية / الإقامة</div>
+      <input class="field-input" id="pf_nationalId" value="${p.nationalId||''}" placeholder="10xxxxxxxxx">
+    </div>
+    <div class="field-group">
+      <div class="field-label">🏦 رقم الحساب البنكي (IBAN)</div>
+      <input class="field-input" id="pf_bankAccount" value="${p.bankAccount||''}" placeholder="SA00 0000 0000 0000 0000 0000">
+    </div>
+    <div class="field-group">
+      <div class="field-label">اسم البنك</div>
+      <input class="field-input" id="pf_bankName" value="${p.bankName||''}" placeholder="مثال: البنك الأهلي السعودي">
+    </div>
+    <div class="field-group">
+      <div class="field-label">تاريخ بداية العمل</div>
+      <input class="field-input" id="pf_startDate" type="date" value="${p.startDate||''}">
+    </div>
+    <hr class="section-sep">
+    <div class="section-label">📄 بيانات العقد</div>
+    <div class="field-group">
+      <div class="field-label">الراتب التعاقدي الإجمالي (ر.س)</div>
+      <input class="field-input" id="pf_contractSalary" type="number" value="${p.contractSalary||0}" min="0">
+    </div>
+    <div class="field-group">
+      <div class="field-label">نوع العقد</div>
+      <div class="contract-type-btns" id="contractTypeBtns">${ctBtns}</div>
+      <input type="hidden" id="pf_contractType" value="${p.contractType||'دوام كامل'}">
+    </div>
+    <div class="field-group full">
+      <div class="field-label">ملاحظات</div>
+      <input class="field-input" id="pf_notes" value="${p.notes||''}" placeholder="أي ملاحظات إضافية...">
+    </div>`;
+
+  document.getElementById("profileModal").classList.add("open");
+}
+
+function selectContractType(btn, type) {
+  document.querySelectorAll("#contractTypeBtns .contract-type-btn").forEach(b => b.classList.remove("selected"));
+  btn.classList.add("selected");
+  document.getElementById("pf_contractType").value = type;
+}
+
+function closeProfileModal() {
+  document.getElementById("profileModal").classList.remove("open");
+  editingProfileEmpId = null;
+}
+
+function saveProfileModal() {
+  if (!editingProfileEmpId) return;
+  const data = {
+    jobTitle:       document.getElementById("pf_jobTitle").value,
+    phone:          document.getElementById("pf_phone").value,
+    nationalId:     document.getElementById("pf_nationalId").value,
+    startDate:      document.getElementById("pf_startDate").value,
+    contractSalary: +document.getElementById("pf_contractSalary").value || 0,
+    contractType:   document.getElementById("pf_contractType").value,
+    bankAccount:    document.getElementById("pf_bankAccount").value,
+    bankName:       document.getElementById("pf_bankName").value,
+    notes:          document.getElementById("pf_notes").value,
+  };
+  saveEmpProfile(editingProfileEmpId, data);
+  closeProfileModal();
+  renderAll();
+  showToast("✅ تم حفظ بيانات الموظف بنجاح");
+}
+
+// ── Modal ──────────────────────────────────────────────────────────────
+function openModal(empId) {
+  editingEmpId = empId;
+  const emp = EMPLOYEES.find(e => e.id === empId);
+  const { month, year } = getMonthYear();
+  const d = getPayData(empId, month, year);
+  document.getElementById("modalTitle").textContent = `✏️ ${emp.name} — ${MONTHS_AR[month]} ${year}`;
+
+  const fields = [
+    { key:"base",           label:"الراتب الأساسي",   section:"💰 المستحقات" },
+    { key:"housing",        label:"بدل السكن" },
+    { key:"transport",      label:"بدل المواصلات" },
+    { key:"medical",        label:"البدل الطبي",       sep:true },
+    { key:"overtime",       label:"أوفرتايم",          section:"⏰ الإضافي والمكافآت" },
+    { key:"bonus",          label:"بونص" },
+    { key:"reward",         label:"مكافأة",            sep:true },
+    { key:"deduct_absence", label:"خصم غياب",          section:"➖ الخصومات" },
+    { key:"deduct_advance", label:"خصم سلفة" },
+    { key:"deduct_other",   label:"خصومات أخرى",       sep:true },
+    { key:"notes",          label:"ملاحظات",           full:true, text:true },
+  ];
+
+  let html = "";
+  fields.forEach(f => {
+    if (f.section) html += `<div class="section-label">${f.section}</div>`;
+    if (f.sep) html += `<hr class="section-sep">`;
+    const cls = "field-group" + (f.full ? " full" : "");
+    if (f.text) {
+      html += `<div class="${cls}">
+        <div class="field-label">${f.label}</div>
+        <input class="field-input" id="fi_${f.key}" value="${d[f.key]||""}" placeholder="${f.label}">
+      </div>`;
+    } else {
+      html += `<div class="${cls}">
+        <div class="field-label">${f.label}</div>
+        <input class="field-input" id="fi_${f.key}" type="number" value="${d[f.key]||0}" min="0">
+      </div>`;
+    }
+  });
+  document.getElementById("modalFields").innerHTML = html;
+  document.getElementById("editModal").classList.add("open");
+}
+
+function closeModal() {
+  document.getElementById("editModal").classList.remove("open");
+  editingEmpId = null;
+}
+
+function saveModal() {
+  if (!editingEmpId) return;
+  const { month, year } = getMonthYear();
+  const keys = ["base","housing","transport","medical","overtime","bonus","reward","deduct_absence","deduct_advance","deduct_other","notes"];
+  const data = {};
+  keys.forEach(k => {
+    const el = document.getElementById("fi_"+k);
+    data[k] = k === "notes" ? el.value : +el.value || 0;
+  });
+  savePayData(editingEmpId, month, year, data);
+  closeModal();
+  renderAll();
+  showToast("✅ تم حفظ بيانات الراتب بنجاح");
+}
+
+// ── Add / Delete Employee ─────────────────────────────────────────────
+function confirmDeleteEmployee(empId) {
+  const emp = EMPLOYEES.find(e => e.id === empId);
+  if (!confirm(`هل أنت متأكد من حذف الموظف "${emp.name}"؟\nلا يمكن التراجع عن هذا الإجراء.`)) return;
+  const idx = EMPLOYEES.findIndex(e => e.id === empId);
+  if (idx !== -1) EMPLOYEES.splice(idx, 1);
+  saveEmployees();
+  activeEmpId = "all";
+  renderAll();
+  showToast("🗑️ تم حذف الموظف بنجاح");
+}
+
+const EMP_COLORS = ["#3B82F6","#06B6D4","#8B5CF6","#EC4899","#F59E0B","#10B981","#EF4444","#14B8A6","#F97316","#6366F1"];
+
+function openAddEmployeeModal() {
+  document.getElementById("addEmpModal").classList.add("open");
+  document.getElementById("ae_name").value = "";
+  document.getElementById("ae_dept").value = "";
+  document.getElementById("ae_role").value = "employee";
+  document.getElementById("ae_base").value = "";
+  document.getElementById("ae_housing").value = "";
+  document.getElementById("ae_transport").value = "";
+  document.getElementById("ae_medical").value = "";
+  document.getElementById("ae_jobTitle").value = "";
+  document.getElementById("ae_phone").value = "";
+  document.getElementById("ae_bankAccount").value = "";
+  document.getElementById("ae_bankName").value = "";
+  document.getElementById("ae_contractSalary").value = "";
+}
+
+function closeAddEmployeeModal() {
+  document.getElementById("addEmpModal").classList.remove("open");
+}
+
+function saveAddEmployee() {
+  const name = document.getElementById("ae_name").value.trim();
+  const dept = document.getElementById("ae_dept").value.trim();
+  if (!name || !dept) { alert("يرجى إدخال الاسم والقسم على الأقل"); return; }
+
+  const id = "emp_" + Date.now();
+  const color = EMP_COLORS[EMPLOYEES.length % EMP_COLORS.length];
+  const role = document.getElementById("ae_role").value;
+
+  EMPLOYEES.push({ id, name, dept, color, role });
+  saveEmployees();
+
+  // Save default salary
+  const { month, year } = getMonthYear();
+  savePayData(id, month, year, {
+    base:           +document.getElementById("ae_base").value || 0,
+    housing:        +document.getElementById("ae_housing").value || 0,
+    transport:      +document.getElementById("ae_transport").value || 0,
+    medical:        +document.getElementById("ae_medical").value || 0,
+    overtime: 0, bonus: 0, reward: 0,
+    deduct_absence: 0, deduct_advance: 0, deduct_other: 0, notes: ""
+  });
+
+  // Save profile
+  saveEmpProfile(id, {
+    jobTitle:       document.getElementById("ae_jobTitle").value,
+    phone:          document.getElementById("ae_phone").value,
+    nationalId:     "",
+    startDate:      "",
+    contractSalary: +document.getElementById("ae_contractSalary").value || 0,
+    contractType:   "دوام كامل",
+    bankAccount:    document.getElementById("ae_bankAccount").value,
+    bankName:       document.getElementById("ae_bankName").value,
+    notes:          ""
+  });
+
+  closeAddEmployeeModal();
+  activeEmpId = id;
+  renderAll();
+  showToast("✅ تم إضافة الموظف بنجاح");
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2800);
+}
+
+// ── Password ───────────────────────────────────────────────────────────
+const PASS = "112233";
+let unlocked = false;
+
+function checkPassword() {
+  const val = document.getElementById("lockInput").value;
+  const inp = document.getElementById("lockInput");
+  const err = document.getElementById("lockErr");
+  if (val === PASS) {
+    unlocked = true;
+    document.getElementById("lockScreen").style.display = "none";
+    renderAll();
+  } else {
+    inp.classList.add("error");
+    err.textContent = "❌ كلمة المرور غير صحيحة، حاول مرة أخرى";
+    inp.value = "";
+    setTimeout(() => inp.classList.remove("error"), 400);
+  }
+}
+
+// Auto-unlock: hide lock screen and show dashboard immediately
+unlocked = true;
+document.getElementById("lockScreen").style.display = "none";
+
+// ── Boot ───────────────────────────────────────────────────────────────
+// Auto-render dashboard with data immediately on load
+renderAll();
+
+</script>
+</body>
+</html>
